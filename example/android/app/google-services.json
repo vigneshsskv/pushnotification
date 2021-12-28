@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "922391139111",
+    "project_id": "flutter-plugin-firebase",
+    "storage_bucket": "flutter-plugin-firebase.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:922391139111:android:4fa5ac71e08da72f650f02",
+        "android_client_info": {
+          "package_name": "com.vignesh.pushnotification_example"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "922391139111-lk6dgthv6vf037u5u3elan810kgsr03d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0Ep1MQ9CjJnbbjp80v-jy6mLuhiZddd4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "922391139111-lk6dgthv6vf037u5u3elan810kgsr03d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
