@@ -31,7 +31,7 @@ flutter:
     platforms:
       android:
         package: com.vignesh.pushnotification
-        pluginClass: PushnotificationPlugin
+        pluginClass: PushNotificationPlugin
       ios:
         pluginClass: PushnotificationPlugin
       linux:

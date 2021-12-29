@@ -5,11 +5,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.util.Log
 import androidx.annotation.NonNull
 import androidx.core.app.NotificationManagerCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.gson.Gson
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -22,9 +24,9 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-
 /** PushNotificationPlugin */
-class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHandler, NewIntentListener, ActivityAware {
+class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHandler,
+        NewIntentListener, ActivityAware {
     private val cachedThreadPool: ExecutorService by lazy { Executors.newCachedThreadPool() }
     private lateinit var channel: MethodChannel
     private var applicationContext: Context? = null
@@ -35,18 +37,23 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
         with(FirebaseMessageUtils) {
             channel = MethodChannel(flutterPluginBinding.binaryMessenger, "${BUNDLE_ID}/messaging")
             channel.setMethodCallHandler(this@PushNotificationPlugin)
-            LocalBroadcastManager.getInstance(flutterPluginBinding.applicationContext).registerReceiver(
-                    this@PushNotificationPlugin,
-                    IntentFilter().apply {
-                        addAction(ACTION_DEVICE_TOKEN)
-                        addAction(ACTION_REMOTE_MESSAGE)
-                    },
-            )
+            LocalBroadcastManager.getInstance(flutterPluginBinding.applicationContext)
+                    .registerReceiver(
+                            this@PushNotificationPlugin,
+                            IntentFilter().also {
+                                it.addAction(ACTION_DEVICE_TOKEN)
+                                it.addAction(ACTION_REMOTE_MESSAGE)
+                            },
+                    )
         }
     }
 
     override fun onNewIntent(intent: Intent?): Boolean {
-        TODO("Not yet implemented")
+        Log.d("lifecycle", "onNewIntent")
+        return intent?.let {
+            Log.d("onNewIntent", Gson().toJson(it))
+            true
+        } ?: false
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -55,7 +62,8 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
         mainActivity?.intent?.let { intent ->
             intent.extras?.let {
                 if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
-                        != Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) {
+                        != Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
+                ) {
                     onNewIntent(mainActivity?.intent)
                 }
             }
@@ -85,7 +93,10 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
                 }
                 if (it == ACTION_REMOTE_MESSAGE) {
                     intentData.getStringExtra(EXTRA_REMOTE_MESSAGE)?.let {
-                        channel.invokeMethod(ChannelValue.ON_MESSAGE_RECEIVER_LISTENER.type, it)
+                        channel.invokeMethod(
+                                ChannelValue.ON_NOTIFICATION_RECEIVER_LISTENER.type,
+                                it
+                        )
                     }
                 }
             }
@@ -99,7 +110,7 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
             ChannelValue.REQUEST_PERMISSION.type -> getPermissions()
             ChannelValue.SHOW_NOTIFICATION.type -> showNotification(call.arguments)
             ChannelValue.REMOVE_NOTIFICATION.type -> removeNotification(call.arguments)
-            ChannelValue.MESSAGE_OPEN_LISTENER.type -> notificationClick(call.arguments)
+            ChannelValue.NOTIFICATION_CLICKED.type -> notificationClick(call.arguments)
             else -> {
                 result.notImplemented()
                 null
@@ -116,6 +127,11 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
                 )
             }
         }
+    }
+
+    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        channel.setMethodCallHandler(null)
+        LocalBroadcastManager.getInstance(binding.applicationContext).unregisterReceiver(this)
     }
 
     private fun getToken() = Tasks.call(
@@ -143,7 +159,8 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
             {
                 val permissions: MutableMap<String, Int> = HashMap()
                 applicationContext?.let {
-                    val areNotificationsEnabled = NotificationManagerCompat.from(it).areNotificationsEnabled()
+                    val areNotificationsEnabled =
+                            NotificationManagerCompat.from(it).areNotificationsEnabled()
                     permissions["authorizationStatus"] = if (areNotificationsEnabled) 1 else 0
                     permissions
                 } ?: false
@@ -156,7 +173,8 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
 
     private fun removeNotification(arguments: Any?) = Tasks.call(cachedThreadPool, {
         applicationContext?.let { context ->
-            val notificationManager: NotificationManagerCompat = NotificationManagerCompat.from(context)
+            val notificationManager: NotificationManagerCompat =
+                    NotificationManagerCompat.from(context)
             arguments?.let {
                 (it as? Map<*, *>)?.let { map ->
                     {
@@ -181,10 +199,5 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
     private fun getExceptionDetails(exception: Exception?) = HashMap<String, Any?>().apply {
         this["code"] = "unknown"
         this["message"] = exception?.message ?: "An unknown error has occurred."
-    }
-
-    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-        channel.setMethodCallHandler(null)
-        LocalBroadcastManager.getInstance(binding.applicationContext).unregisterReceiver(this)
     }
 }
