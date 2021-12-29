@@ -17,8 +17,8 @@ class FirebaseMessageService : FirebaseMessagingService() {
         Log.d(TAG, "Device token: $token")
         with(FirebaseMessageUtils) {
             LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
-                Intent(ACTION_DEVICE_TOKEN).apply {
-                    putExtra(EXTRA_TOKEN, token)
+                Intent(ACTION_DEVICE_TOKEN).also {
+                    it.putExtra(EXTRA_TOKEN, token)
                 },
             )
         }
@@ -34,8 +34,8 @@ class FirebaseMessageService : FirebaseMessagingService() {
         Log.d(TAG, "Received Message: $receivedMessage")
         with(FirebaseMessageUtils) {
             LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
-                Intent(ACTION_REMOTE_MESSAGE).apply {
-                    putExtra(EXTRA_REMOTE_MESSAGE, receivedMessage)
+                Intent(ACTION_REMOTE_MESSAGE).also {
+                    it.putExtra(EXTRA_REMOTE_MESSAGE, receivedMessage)
                 },
             )
         }

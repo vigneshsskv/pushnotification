@@ -1,11 +1,13 @@
 package com.vignesh.pushnotification
 
+import android.content.Context
+
 enum class ChannelValue(val type: String) {
     DEVICE_TOKEN_LISTENER("deviceTokenListener"),
     GET_DEVICE_TOKEN("getDeviceToken"),
     DELETE_DEVICE_TOKEN("deleteDeviceToken"),
-    MESSAGE_OPEN_LISTENER("messageOpenListener"),
-    ON_MESSAGE_RECEIVER_LISTENER("messageReceiverListener"),
+    NOTIFICATION_CLICKED("notificationClicked"),
+    ON_NOTIFICATION_RECEIVER_LISTENER("notificationReceiverListener"),
     REQUEST_PERMISSION("requestPermission"),
     SHOW_NOTIFICATION("showNotification"),
     REMOVE_NOTIFICATION("removeNotification"),
