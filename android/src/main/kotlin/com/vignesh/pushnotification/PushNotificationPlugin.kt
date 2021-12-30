@@ -28,15 +28,14 @@ import java.util.concurrent.Executors
 object ContextHolder {
     var applicationContext: Context? = null
         set(applicationContext) {
-            Log.d("FLTFireContextHolder", "received application context.")
             field = applicationContext
         }
 }
 
 /** PushNotificationPlugin */
 class PushNotificationPlugin : BroadcastReceiver(),
-    FlutterPlugin, MethodCallHandler,
-    NewIntentListener, ActivityAware {
+        FlutterPlugin, MethodCallHandler,
+        NewIntentListener, ActivityAware {
     private val cachedThreadPool: ExecutorService by lazy { Executors.newCachedThreadPool() }
     private lateinit var channel: MethodChannel
     private var mainActivity: Activity? = null
@@ -49,13 +48,13 @@ class PushNotificationPlugin : BroadcastReceiver(),
             channel = MethodChannel(flutterPluginBinding.binaryMessenger, "${BUNDLE_ID}/messaging")
             channel.setMethodCallHandler(this@PushNotificationPlugin)
             LocalBroadcastManager.getInstance(flutterPluginBinding.applicationContext)
-                .registerReceiver(
-                    this@PushNotificationPlugin,
-                    IntentFilter().also {
-                        it.addAction(ACTION_DEVICE_TOKEN)
-                        it.addAction(ACTION_REMOTE_MESSAGE)
-                    },
-                )
+                    .registerReceiver(
+                            this@PushNotificationPlugin,
+                            IntentFilter().also {
+                                it.addAction(ACTION_DEVICE_TOKEN)
+                                it.addAction(ACTION_REMOTE_MESSAGE)
+                            },
+                    )
         }
     }
 
@@ -63,21 +62,22 @@ class PushNotificationPlugin : BroadcastReceiver(),
         it.extras?.let { data ->
             // Remote Message ID can be either one of the following...
             (data.getString("google.message_id") ?: data.getString("message_id"))
-                ?.let { messageId ->
-                    // If we can't find a copy of the remote message in memory then check from our persisted store.
-                    (FirebaseMessageUtils.notifications[messageId]
-                        ?: FirebaseStore.getFirebaseMessage(messageId))?.let { remoteMessage ->
-                        // Store this message for later use by getInitialMessage.
-                        initialMessage = remoteMessage
-                        FirebaseMessageUtils.notifications.remove(messageId)
-                        channel.invokeMethod(
-                            ChannelValue.NOTIFICATION_CLICKED_LISTENER.name,
-                            FirebaseMessageUtils.remoteMessageToMap(remoteMessage)
-                        )
-                        mainActivity?.intent = it
-                        true
+                    ?.let { messageId ->
+                        // If we can't find a copy of the remote message in memory then check from our persisted store.
+                        (FirebaseMessageUtils.notifications[messageId]
+                                ?: FirebaseStore.getFirebaseMessage(messageId))?.let { remoteMessage ->
+                            // Store this message for later use by getInitialMessage.
+                            initialMessage = remoteMessage
+                            FirebaseMessageUtils.notifications.remove(messageId)
+                            val remoteMessageToMap = FirebaseMessageUtils.remoteMessageToMap(remoteMessage)
+                            channel.invokeMethod(
+                                    ChannelValue.CLICKED_NOTIFICATION_LISTENER.type,
+                                    remoteMessageToMap
+                            )
+                            mainActivity?.intent = it
+                            true
+                        } ?: false
                     } ?: false
-                } ?: false
         } ?: false
     } ?: false
 
@@ -87,7 +87,7 @@ class PushNotificationPlugin : BroadcastReceiver(),
         mainActivity?.intent?.let { intent ->
             intent.extras?.let {
                 if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
-                    != Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
+                        != Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
                 ) {
                     onNewIntent(mainActivity?.intent)
                 }
@@ -119,8 +119,8 @@ class PushNotificationPlugin : BroadcastReceiver(),
                 if (it == ACTION_REMOTE_MESSAGE) {
                     intentData.getStringExtra(EXTRA_REMOTE_MESSAGE)?.let {
                         channel.invokeMethod(
-                            ChannelValue.ON_NOTIFICATION_RECEIVER_LISTENER.type,
-                            remoteMessageToMap(Gson().fromJson(it, RemoteMessage::class.java))
+                                ChannelValue.ON_NOTIFICATION_RECEIVER_LISTENER.type,
+                                remoteMessageToMap(Gson().fromJson(it, RemoteMessage::class.java))
                         )
                     }
                 }
@@ -135,7 +135,7 @@ class PushNotificationPlugin : BroadcastReceiver(),
             ChannelValue.REQUEST_PERMISSION.type -> getPermissions()
             ChannelValue.SHOW_NOTIFICATION.type -> showNotification(call.arguments)
             ChannelValue.REMOVE_NOTIFICATION.type -> removeNotification(call.arguments)
-            ChannelValue.NOTIFICATION_CLICKED_LISTENER.type -> notificationClick()
+            ChannelValue.CLICKED_NOTIFICATION_LISTENER.type -> notificationClick()
             else -> {
                 result.notImplemented()
                 null
@@ -146,9 +146,9 @@ class PushNotificationPlugin : BroadcastReceiver(),
             } else {
                 val exception = task.exception
                 result.error(
-                    "firebase_messaging",
-                    exception?.message,
-                    getExceptionDetails(exception),
+                        "firebase_messaging",
+                        exception?.message,
+                        getExceptionDetails(exception),
                 )
             }
         }
@@ -160,39 +160,39 @@ class PushNotificationPlugin : BroadcastReceiver(),
     }
 
     private fun getToken() = Tasks.call(
-        cachedThreadPool,
-        {
-            val token = Tasks.await(FirebaseMessaging.getInstance().token)
-            object : HashMap<String?, Any?>() {
-                init {
-                    put("token", token)
+            cachedThreadPool,
+            {
+                val token = Tasks.await(FirebaseMessaging.getInstance().token)
+                object : HashMap<String?, Any?>() {
+                    init {
+                        put("token", token)
+                    }
                 }
-            }
-        },
+            },
     )
 
     private fun deleteToken() = Tasks.call(
-        cachedThreadPool,
-        {
-            consumedInitialMessages.clear()
-            initialMessage = null
-            FirebaseStore.clearPreference()
-            Tasks.await(FirebaseMessaging.getInstance().deleteToken())
-            null
-        },
+            cachedThreadPool,
+            {
+                consumedInitialMessages.clear()
+                initialMessage = null
+                FirebaseStore.clearPreference()
+                Tasks.await(FirebaseMessaging.getInstance().deleteToken())
+                null
+            },
     )
 
     private fun getPermissions() = Tasks.call(
-        cachedThreadPool,
-        {
-            val permissions: MutableMap<String, Int> = HashMap()
-            ContextHolder.applicationContext?.let {
-                val areNotificationsEnabled =
-                    NotificationManagerCompat.from(it).areNotificationsEnabled()
-                permissions["authorizationStatus"] = if (areNotificationsEnabled) 1 else 0
-                permissions
-            } ?: false
-        },
+            cachedThreadPool,
+            {
+                val permissions: MutableMap<String, Int> = HashMap()
+                ContextHolder.applicationContext?.let {
+                    val areNotificationsEnabled =
+                            NotificationManagerCompat.from(it).areNotificationsEnabled()
+                    permissions["authorizationStatus"] = if (areNotificationsEnabled) 1 else 0
+                    permissions
+                } ?: false
+            },
     )
 
     private fun showNotification(arguments: Any?) = Tasks.call(cachedThreadPool, {
@@ -202,7 +202,7 @@ class PushNotificationPlugin : BroadcastReceiver(),
     private fun removeNotification(arguments: Any?) = Tasks.call(cachedThreadPool, {
         ContextHolder.applicationContext?.let { context ->
             val notificationManager: NotificationManagerCompat =
-                NotificationManagerCompat.from(context)
+                    NotificationManagerCompat.from(context)
             arguments?.let {
                 (it as? Map<*, *>)?.let { map ->
                     {
@@ -218,33 +218,33 @@ class PushNotificationPlugin : BroadcastReceiver(),
     })
 
     private fun notificationClick() = Tasks.call(
-        cachedThreadPool,
-        {
-            initialMessage?.let {
-                initialMessage = null
-                FirebaseMessageUtils.remoteMessageToMap(it)
-            } ?: mainActivity?.let { activity ->
-                // Remote Message ID can be either one of the following...
-                activity.intent?.extras?.let { data ->
-                    (data.getString("google.message_id")
-                        ?: data.getString("message_id"))?.let { id ->
-                        consumedInitialMessages[id]?.let { null } ?: {
-                            FirebaseMessageUtils.notifications[id]?.let {
-                                consumedInitialMessages[id] = true
-                                FirebaseMessageUtils.remoteMessageToMap(it)
-                            } ?: {
-                                val firebaseMessage = FirebaseStore.getFirebaseMessage(id)
-                                FirebaseStore.removeFirebaseMessage(id)
-                                firebaseMessage?.let {
+            cachedThreadPool,
+            {
+                initialMessage?.let {
+                    initialMessage = null
+                    FirebaseMessageUtils.remoteMessageToMap(it)
+                } ?: mainActivity?.let { activity ->
+                    // Remote Message ID can be either one of the following...
+                    activity.intent?.extras?.let { data ->
+                        (data.getString("google.message_id")
+                                ?: data.getString("message_id"))?.let { id ->
+                            consumedInitialMessages[id]?.let { null } ?: {
+                                FirebaseMessageUtils.notifications[id]?.let {
                                     consumedInitialMessages[id] = true
                                     FirebaseMessageUtils.remoteMessageToMap(it)
+                                } ?: {
+                                    val firebaseMessage = FirebaseStore.getFirebaseMessage(id)
+                                    FirebaseStore.removeFirebaseMessage(id)
+                                    firebaseMessage?.let {
+                                        consumedInitialMessages[id] = true
+                                        FirebaseMessageUtils.remoteMessageToMap(it)
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-        },
+            },
     )
 
     private fun getExceptionDetails(exception: Exception?) = HashMap<String, Any?>().apply {
