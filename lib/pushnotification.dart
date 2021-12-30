@@ -1,7 +1,8 @@
 import 'package:pushnotification/PushNotificationMananger.dart';
 
 class Pushnotification {
-  static final PushNotificationManager _mediator = PushNotificationManager.instance;
+  static final PushNotificationManager _mediator =
+      PushNotificationManager.instance;
 
   /// Fires when a new token is generated.
   static Stream<String> get deviceTokenChangeListener =>
@@ -18,6 +19,10 @@ class Pushnotification {
   /// Fires when a notification is click.
   static Future<Map<String, dynamic>?> notificationClicked() =>
       _mediator.notificationClicked();
+
+  /// Fires when a notification is click when app is on foreground.
+  static Stream<Map<String, dynamic>> get notificationClickedListener =>
+      _mediator.notificationClickedListener;
 
   /// Fires when a new notification received.
   static Stream<Map<String, dynamic>> get notificationReceivedListener =>
