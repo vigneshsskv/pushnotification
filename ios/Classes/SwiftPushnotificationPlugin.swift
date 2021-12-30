@@ -10,6 +10,7 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
     
     let notificationCenter = UNUserNotificationCenter.current()
     private var currentDeviceToken: String?
+    var pendingNotification: [String: Any]?
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "pushnotification", binaryMessenger: registrar.messenger())
@@ -27,11 +28,14 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
         case .requestPermission:
             let options = call.arguments as? [String: Bool] ?? [:]
             requestPermission(options: options)
+            result(true)
         case .register:
             registerPushNotification()
+            result(true)
             break
         case .unregister:
             unregisterNotification()
+            result(true)
             break
         case .getDeviceToken:
             result(currentDeviceToken)
@@ -41,15 +45,15 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
             let data = try? JSONSerialization.data(withJSONObject: args, options: [])
             guard let payload = try? JSONDecoder().decode(Payload.self, from: data ?? Data()) else { break }
             showNotification(payload: payload)
+            result(true)
             break
         case .removeNotification:
             removeNotification()
+            result(true)
             break
         case .none:
             break
         }
-        
-        result("iOS " + UIDevice.current.systemVersion)
     }
     
     // MARK: - Notification methods
