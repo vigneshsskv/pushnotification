@@ -94,7 +94,7 @@ class PushNotificationManager extends PushNotificationInterface {
   }
 
   @override
-  Future<Map<String, dynamic>?> notificationClicked() async {
+  Future<Map<String, dynamic>?> getClickedNotification() async {
     try {
       var data = await _channel.invokeMapMethod<String, String>(
         ChannelValue.notificationClickedListener.name,
@@ -106,7 +106,7 @@ class PushNotificationManager extends PushNotificationInterface {
   }
 
   @override
-  Stream<Map<String, dynamic>> get notificationClickedListener =>
+  Stream<Map<String, dynamic>> get clickedNotificationListener =>
       _notificationClickedStreamController.stream;
 
   @override
