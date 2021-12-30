@@ -17,12 +17,12 @@ class Pushnotification {
   static Future<void> unregisterDevice() => _mediator.unregisterDevice();
 
   /// Fires when a notification is click.
-  static Future<Map<String, dynamic>?> notificationClicked() =>
-      _mediator.notificationClicked();
+  static Future<Map<String, dynamic>?> getClickedNotification() =>
+      _mediator.getClickedNotification();
 
   /// Fires when a notification is click when app is on foreground.
-  static Stream<Map<String, dynamic>> get notificationClickedListener =>
-      _mediator.notificationClickedListener;
+  static Stream<Map<String, dynamic>> get clickedNotificationListener =>
+      _mediator.clickedNotificationListener;
 
   /// Fires when a new notification received.
   static Stream<Map<String, dynamic>> get notificationReceivedListener =>
