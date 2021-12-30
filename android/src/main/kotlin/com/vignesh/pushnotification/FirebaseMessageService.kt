@@ -45,12 +45,10 @@ class FirebaseMessageService : FirebaseMessagingService() {
      * @param remoteMessage Object representing the message received from Firebase Cloud Messaging.
      */
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        val receivedMessage = Gson().toJson(remoteMessage)
-        Log.d(TAG, "Received Message: $receivedMessage")
         with(FirebaseMessageUtils) {
             LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(
                 Intent(ACTION_REMOTE_MESSAGE).also {
-                    it.putExtra(EXTRA_REMOTE_MESSAGE, receivedMessage)
+                    it.putExtra(EXTRA_REMOTE_MESSAGE, Gson().toJson(remoteMessage))
                 },
             )
         }

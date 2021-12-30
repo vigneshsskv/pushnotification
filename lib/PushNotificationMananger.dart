@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -57,12 +58,11 @@ class PushNotificationManager extends PushNotificationInterface {
       } else if (call.method ==
           ChannelValue.notificationReceiverListener.name) {
         _notificationReceivedStreamController.add(
-          call.arguments,
+          Map<String, dynamic>.from(call.arguments),
         );
-      } else if (call.method ==
-          ChannelValue.notificationReceiverListener.name) {
+      } else if (call.method == ChannelValue.notificationClickedListener.name) {
         _clickedNotificationStreamController.add(
-          call.arguments,
+          Map<String, dynamic>.from(call.arguments),
         );
       }
     });
