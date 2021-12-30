@@ -25,16 +25,26 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+object ContextHolder {
+    var applicationContext: Context? = null
+        set(applicationContext) {
+            Log.d("FLTFireContextHolder", "received application context.")
+            field = applicationContext
+        }
+}
+
 /** PushNotificationPlugin */
-class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHandler,
+class PushNotificationPlugin : BroadcastReceiver(),
+    FlutterPlugin, MethodCallHandler,
     NewIntentListener, ActivityAware {
     private val cachedThreadPool: ExecutorService by lazy { Executors.newCachedThreadPool() }
     private lateinit var channel: MethodChannel
-    private var applicationContext: Context? = null
     private var mainActivity: Activity? = null
+    private val consumedInitialMessages = HashMap<String, Boolean>()
+    private var initialMessage: RemoteMessage? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        applicationContext = flutterPluginBinding.applicationContext
+        ContextHolder.applicationContext = flutterPluginBinding.applicationContext
         with(FirebaseMessageUtils) {
             channel = MethodChannel(flutterPluginBinding.binaryMessenger, "${BUNDLE_ID}/messaging")
             channel.setMethodCallHandler(this@PushNotificationPlugin)
@@ -49,13 +59,27 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
         }
     }
 
-    override fun onNewIntent(intent: Intent?): Boolean {
-        Log.d("lifecycle", "onNewIntent")
-        return intent?.let {
-            Log.d("onNewIntent", Gson().toJson(it))
-            true
+    override fun onNewIntent(intent: Intent?) = intent?.let {
+        it.extras?.let { data ->
+            // Remote Message ID can be either one of the following...
+            (data.getString("google.message_id") ?: data.getString("message_id"))
+                ?.let { messageId ->
+                    // If we can't find a copy of the remote message in memory then check from our persisted store.
+                    (FirebaseMessageUtils.notifications[messageId]
+                        ?: FirebaseStore.getFirebaseMessage(messageId))?.let { remoteMessage ->
+                        // Store this message for later use by getInitialMessage.
+                        initialMessage = remoteMessage
+                        FirebaseMessageUtils.notifications.remove(messageId)
+                        channel.invokeMethod(
+                            ChannelValue.NOTIFICATION_CLICKED_LISTENER.name,
+                            FirebaseMessageUtils.remoteMessageToMap(remoteMessage)
+                        )
+                        mainActivity?.intent = it
+                        true
+                    } ?: false
+                } ?: false
         } ?: false
-    }
+    } ?: false
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         binding.addOnNewIntentListener(this)
@@ -111,7 +135,7 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
             ChannelValue.REQUEST_PERMISSION.type -> getPermissions()
             ChannelValue.SHOW_NOTIFICATION.type -> showNotification(call.arguments)
             ChannelValue.REMOVE_NOTIFICATION.type -> removeNotification(call.arguments)
-            ChannelValue.NOTIFICATION_CLICKED_LISTENER.type -> notificationClick(call.arguments)
+            ChannelValue.NOTIFICATION_CLICKED_LISTENER.type -> notificationClick()
             else -> {
                 result.notImplemented()
                 null
@@ -150,6 +174,9 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
     private fun deleteToken() = Tasks.call(
         cachedThreadPool,
         {
+            consumedInitialMessages.clear()
+            initialMessage = null
+            FirebaseStore.clearPreference()
             Tasks.await(FirebaseMessaging.getInstance().deleteToken())
             null
         },
@@ -159,7 +186,7 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
         cachedThreadPool,
         {
             val permissions: MutableMap<String, Int> = HashMap()
-            applicationContext?.let {
+            ContextHolder.applicationContext?.let {
                 val areNotificationsEnabled =
                     NotificationManagerCompat.from(it).areNotificationsEnabled()
                 permissions["authorizationStatus"] = if (areNotificationsEnabled) 1 else 0
@@ -173,7 +200,7 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
     })
 
     private fun removeNotification(arguments: Any?) = Tasks.call(cachedThreadPool, {
-        applicationContext?.let { context ->
+        ContextHolder.applicationContext?.let { context ->
             val notificationManager: NotificationManagerCompat =
                 NotificationManagerCompat.from(context)
             arguments?.let {
@@ -190,10 +217,33 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
         }
     })
 
-    private fun notificationClick(arguments: Any?) = Tasks.call(
+    private fun notificationClick() = Tasks.call(
         cachedThreadPool,
         {
-
+            initialMessage?.let {
+                initialMessage = null
+                FirebaseMessageUtils.remoteMessageToMap(it)
+            } ?: mainActivity?.let { activity ->
+                // Remote Message ID can be either one of the following...
+                activity.intent?.extras?.let { data ->
+                    (data.getString("google.message_id")
+                        ?: data.getString("message_id"))?.let { id ->
+                        consumedInitialMessages[id]?.let { null } ?: {
+                            FirebaseMessageUtils.notifications[id]?.let {
+                                consumedInitialMessages[id] = true
+                                FirebaseMessageUtils.remoteMessageToMap(it)
+                            } ?: {
+                                val firebaseMessage = FirebaseStore.getFirebaseMessage(id)
+                                FirebaseStore.removeFirebaseMessage(id)
+                                firebaseMessage?.let {
+                                    consumedInitialMessages[id] = true
+                                    FirebaseMessageUtils.remoteMessageToMap(it)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         },
     )
 
