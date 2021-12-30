@@ -27,7 +27,7 @@ import java.util.concurrent.Executors
 
 /** PushNotificationPlugin */
 class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHandler,
-        NewIntentListener, ActivityAware {
+    NewIntentListener, ActivityAware {
     private val cachedThreadPool: ExecutorService by lazy { Executors.newCachedThreadPool() }
     private lateinit var channel: MethodChannel
     private var applicationContext: Context? = null
@@ -39,13 +39,13 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
             channel = MethodChannel(flutterPluginBinding.binaryMessenger, "${BUNDLE_ID}/messaging")
             channel.setMethodCallHandler(this@PushNotificationPlugin)
             LocalBroadcastManager.getInstance(flutterPluginBinding.applicationContext)
-                    .registerReceiver(
-                            this@PushNotificationPlugin,
-                            IntentFilter().also {
-                                it.addAction(ACTION_DEVICE_TOKEN)
-                                it.addAction(ACTION_REMOTE_MESSAGE)
-                            },
-                    )
+                .registerReceiver(
+                    this@PushNotificationPlugin,
+                    IntentFilter().also {
+                        it.addAction(ACTION_DEVICE_TOKEN)
+                        it.addAction(ACTION_REMOTE_MESSAGE)
+                    },
+                )
         }
     }
 
@@ -63,7 +63,7 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
         mainActivity?.intent?.let { intent ->
             intent.extras?.let {
                 if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
-                        != Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
+                    != Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
                 ) {
                     onNewIntent(mainActivity?.intent)
                 }
@@ -95,8 +95,8 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
                 if (it == ACTION_REMOTE_MESSAGE) {
                     intentData.getStringExtra(EXTRA_REMOTE_MESSAGE)?.let {
                         channel.invokeMethod(
-                                ChannelValue.ON_NOTIFICATION_RECEIVER_LISTENER.type,
-                                remoteMessageToMap(Gson().fromJson(it, RemoteMessage::class.java))
+                            ChannelValue.ON_NOTIFICATION_RECEIVER_LISTENER.type,
+                            remoteMessageToMap(Gson().fromJson(it, RemoteMessage::class.java))
                         )
                     }
                 }
@@ -122,9 +122,9 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
             } else {
                 val exception = task.exception
                 result.error(
-                        "firebase_messaging",
-                        exception?.message,
-                        getExceptionDetails(exception),
+                    "firebase_messaging",
+                    exception?.message,
+                    getExceptionDetails(exception),
                 )
             }
         }
@@ -136,36 +136,36 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
     }
 
     private fun getToken() = Tasks.call(
-            cachedThreadPool,
-            {
-                val token = Tasks.await(FirebaseMessaging.getInstance().token)
-                object : HashMap<String?, Any?>() {
-                    init {
-                        put("token", token)
-                    }
+        cachedThreadPool,
+        {
+            val token = Tasks.await(FirebaseMessaging.getInstance().token)
+            object : HashMap<String?, Any?>() {
+                init {
+                    put("token", token)
                 }
-            },
+            }
+        },
     )
 
     private fun deleteToken() = Tasks.call(
-            cachedThreadPool,
-            {
-                Tasks.await(FirebaseMessaging.getInstance().deleteToken())
-                null
-            },
+        cachedThreadPool,
+        {
+            Tasks.await(FirebaseMessaging.getInstance().deleteToken())
+            null
+        },
     )
 
     private fun getPermissions() = Tasks.call(
-            cachedThreadPool,
-            {
-                val permissions: MutableMap<String, Int> = HashMap()
-                applicationContext?.let {
-                    val areNotificationsEnabled =
-                            NotificationManagerCompat.from(it).areNotificationsEnabled()
-                    permissions["authorizationStatus"] = if (areNotificationsEnabled) 1 else 0
-                    permissions
-                } ?: false
-            },
+        cachedThreadPool,
+        {
+            val permissions: MutableMap<String, Int> = HashMap()
+            applicationContext?.let {
+                val areNotificationsEnabled =
+                    NotificationManagerCompat.from(it).areNotificationsEnabled()
+                permissions["authorizationStatus"] = if (areNotificationsEnabled) 1 else 0
+                permissions
+            } ?: false
+        },
     )
 
     private fun showNotification(arguments: Any?) = Tasks.call(cachedThreadPool, {
@@ -175,7 +175,7 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
     private fun removeNotification(arguments: Any?) = Tasks.call(cachedThreadPool, {
         applicationContext?.let { context ->
             val notificationManager: NotificationManagerCompat =
-                    NotificationManagerCompat.from(context)
+                NotificationManagerCompat.from(context)
             arguments?.let {
                 (it as? Map<*, *>)?.let { map ->
                     {
@@ -191,10 +191,10 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
     })
 
     private fun notificationClick(arguments: Any?) = Tasks.call(
-            cachedThreadPool,
-            {
+        cachedThreadPool,
+        {
 
-            },
+        },
     )
 
     private fun getExceptionDetails(exception: Exception?) = HashMap<String, Any?>().apply {
