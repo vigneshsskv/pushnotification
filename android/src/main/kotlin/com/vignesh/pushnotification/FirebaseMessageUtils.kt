@@ -20,6 +20,7 @@ enum class ChannelValue(val type: String) {
 
 object FirebaseMessageUtils {
     const val BUNDLE_ID = "com.vignesh.pushnotification"
+    var notifications = HashMap<String, RemoteMessage>()
     const val ACTION_DEVICE_TOKEN = "${BUNDLE_ID}.DEVICE_TOKEN"
     const val ACTION_REMOTE_MESSAGE = "${BUNDLE_ID}.REMOTE_MESSAGE"
     const val EXTRA_TOKEN = "token"
@@ -106,7 +107,7 @@ object FirebaseMessageUtils {
      * @param arguments Method channel call arguments.
      * @return RemoteMessage
      */
-    fun getRemoteMessageForArguments(arguments: Map<String?, Any?>) =
+    fun getRemoteMessageForArguments(arguments: MutableMap<String, Any>) =
         (Objects.requireNonNull(arguments["message"]) as Map<*, *>).let {
             RemoteMessage.Builder((Objects.requireNonNull(it["to"]) as String))
                 .also { builder ->

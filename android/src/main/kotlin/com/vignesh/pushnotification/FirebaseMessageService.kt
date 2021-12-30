@@ -1,6 +1,5 @@
 package com.vignesh.pushnotification
 
-import android.content.BroadcastReceiver
 import android.content.Intent
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -10,7 +9,6 @@ import io.flutter.Log
 import java.util.HashMap
 
 class FirebaseMessageService : FirebaseMessagingService() {
-    var notifications = HashMap<String, RemoteMessage>()
 
     /**
      * Called if the FCM registration token is updated. This may occur if the security of
@@ -29,11 +27,14 @@ class FirebaseMessageService : FirebaseMessagingService() {
 
     override fun handleIntent(intent: Intent) {
         super.handleIntent(intent)
-        if (!FirebaseMessageUtils.isApplicationForeground(applicationContext)) {
-            intent.extras?.let {
-                val remoteMessage = RemoteMessage(it)
-                remoteMessage.notification?.let {
-                    Log.d("handleIntent", Gson().toJson(remoteMessage))
+        intent.extras?.let { data ->
+            RemoteMessage(data).let { message ->
+                message.notification?.let {
+                    message.messageId?.let { messageID ->
+                        FirebaseMessageUtils.notifications[messageID] = message
+                        FirebaseStore.storeFirebaseMessage(message)
+                        Log.d("handleIntent", Gson().toJson(message))
+                    }
                 }
             }
         }
@@ -52,9 +53,5 @@ class FirebaseMessageService : FirebaseMessagingService() {
                 },
             )
         }
-    }
-
-    companion object {
-        private const val TAG = "PushNotification/MessageService"
     }
 }

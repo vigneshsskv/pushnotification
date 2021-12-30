@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -98,10 +97,13 @@ class PushNotificationManager extends PushNotificationInterface {
   @override
   Future<Map<String, dynamic>?> getClickedNotification() async {
     try {
-      var data = await _channel.invokeMapMethod<String, String>(
+      var response = await _channel.invokeMapMethod(
         ChannelValue.notificationClickedListener.name,
       );
-      return data;
+      if (response == null) return null;
+      return Map<String, dynamic>.from(
+        response,
+      );
     } catch (e) {
       rethrow;
     }
@@ -118,7 +120,7 @@ class PushNotificationManager extends PushNotificationInterface {
   @override
   Future<void> getNotificationPermission() async {
     try {
-      await _channel.invokeMapMethod<String, String>(
+      await _channel.invokeMapMethod(
         ChannelValue.requestPermission.name,
       );
     } catch (e) {
