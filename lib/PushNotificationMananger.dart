@@ -9,7 +9,7 @@ enum ChannelValue {
   deviceTokenListener,
   getDeviceToken,
   deleteDeviceToken,
-  notificationClicked,
+  notificationClickedListener,
   notificationReceiverListener,
   requestPermission,
   showNotification,
@@ -21,7 +21,7 @@ extension MethodName on ChannelValue {
         'deviceTokenListener',
         'getDeviceToken',
         'deleteDeviceToken',
-        'notificationClicked',
+        'notificationClickedListener',
         'notificationReceiverListener',
         'requestPermission',
         'showNotification',
@@ -34,6 +34,8 @@ class PushNotificationManager extends PushNotificationInterface {
   late StreamController<String> _deviceTokenStreamController;
   late StreamController<Map<String, dynamic>>
       _notificationReceivedStreamController;
+  late StreamController<Map<String, dynamic>>
+      _notificationClickedStreamController;
   static PushNotificationManager? _instance;
 
   static PushNotificationManager get instance =>
@@ -53,6 +55,11 @@ class PushNotificationManager extends PushNotificationInterface {
       } else if (call.method ==
           ChannelValue.notificationReceiverListener.name) {
         _notificationReceivedStreamController.add(
+          call.arguments,
+        );
+      } else if (call.method ==
+          ChannelValue.notificationReceiverListener.name) {
+        _notificationClickedStreamController.add(
           call.arguments,
         );
       }
@@ -90,13 +97,17 @@ class PushNotificationManager extends PushNotificationInterface {
   Future<Map<String, dynamic>?> notificationClicked() async {
     try {
       var data = await _channel.invokeMapMethod<String, String>(
-        ChannelValue.notificationClicked.name,
+        ChannelValue.notificationClickedListener.name,
       );
       return data;
     } catch (e) {
       rethrow;
     }
   }
+
+  @override
+  Stream<Map<String, dynamic>> get notificationClickedListener =>
+      _notificationClickedStreamController.stream;
 
   @override
   Stream<Map<String, dynamic>> get notificationReceivedListener =>

@@ -11,6 +11,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -95,7 +96,7 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
                     intentData.getStringExtra(EXTRA_REMOTE_MESSAGE)?.let {
                         channel.invokeMethod(
                                 ChannelValue.ON_NOTIFICATION_RECEIVER_LISTENER.type,
-                                it
+                                remoteMessageToMap(Gson().fromJson(it, RemoteMessage::class.java))
                         )
                     }
                 }
@@ -110,7 +111,7 @@ class PushNotificationPlugin : BroadcastReceiver(), FlutterPlugin, MethodCallHan
             ChannelValue.REQUEST_PERMISSION.type -> getPermissions()
             ChannelValue.SHOW_NOTIFICATION.type -> showNotification(call.arguments)
             ChannelValue.REMOVE_NOTIFICATION.type -> removeNotification(call.arguments)
-            ChannelValue.NOTIFICATION_CLICKED.type -> notificationClick(call.arguments)
+            ChannelValue.NOTIFICATION_CLICKED_LISTENER.type -> notificationClick(call.arguments)
             else -> {
                 result.notImplemented()
                 null

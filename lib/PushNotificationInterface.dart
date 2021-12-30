@@ -29,6 +29,13 @@ abstract class PushNotificationInterface {
     );
   }
 
+  /// Fires when a notification is click on app opened.
+  Stream<Map<String, dynamic>> get notificationClickedListener {
+    throw UnimplementedError(
+      'notificationClickedListener is not implemented',
+    );
+  }
+
   /// Fires when a new notification received.
   Stream<Map<String, dynamic>> get notificationReceivedListener {
     throw UnimplementedError(
