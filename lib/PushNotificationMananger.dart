@@ -35,7 +35,7 @@ class PushNotificationManager extends PushNotificationInterface {
   late StreamController<Map<String, dynamic>>
       _notificationReceivedStreamController;
   late StreamController<Map<String, dynamic>>
-      _notificationClickedStreamController;
+      _clickedNotificationStreamController;
   static PushNotificationManager? _instance;
 
   static PushNotificationManager get instance =>
@@ -49,6 +49,8 @@ class PushNotificationManager extends PushNotificationInterface {
     _deviceTokenStreamController = StreamController<String>.broadcast();
     _notificationReceivedStreamController =
         StreamController<Map<String, dynamic>>.broadcast();
+    _clickedNotificationStreamController =
+        StreamController<Map<String, dynamic>>.broadcast();
     _channel.setMethodCallHandler((call) async {
       if (call.method == ChannelValue.deviceTokenListener.name) {
         _deviceTokenStreamController.add(call.arguments as String);
@@ -59,7 +61,7 @@ class PushNotificationManager extends PushNotificationInterface {
         );
       } else if (call.method ==
           ChannelValue.notificationReceiverListener.name) {
-        _notificationClickedStreamController.add(
+        _clickedNotificationStreamController.add(
           call.arguments,
         );
       }
@@ -107,7 +109,7 @@ class PushNotificationManager extends PushNotificationInterface {
 
   @override
   Stream<Map<String, dynamic>> get clickedNotificationListener =>
-      _notificationClickedStreamController.stream;
+      _clickedNotificationStreamController.stream;
 
   @override
   Stream<Map<String, dynamic>> get notificationReceivedListener =>
