@@ -11,7 +11,7 @@ enum class ChannelValue(val type: String) {
     DEVICE_TOKEN_LISTENER("deviceTokenListener"),
     GET_DEVICE_TOKEN("getDeviceToken"),
     DELETE_DEVICE_TOKEN("deleteDeviceToken"),
-    NOTIFICATION_CLICKED_LISTENER("notificationClickedListener"),
+    CLICKED_NOTIFICATION_LISTENER("clickedNotificationListener"),
     ON_NOTIFICATION_RECEIVER_LISTENER("notificationReceiverListener"),
     REQUEST_PERMISSION("requestPermission"),
     SHOW_NOTIFICATION("showNotification"),

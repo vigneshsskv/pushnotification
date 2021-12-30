@@ -5,9 +5,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
-import io.flutter.Log
-import java.util.HashMap
-
 class FirebaseMessageService : FirebaseMessagingService() {
 
     /**
@@ -33,7 +30,6 @@ class FirebaseMessageService : FirebaseMessagingService() {
                     message.messageId?.let { messageID ->
                         FirebaseMessageUtils.notifications[messageID] = message
                         FirebaseStore.storeFirebaseMessage(message)
-                        Log.d("handleIntent", Gson().toJson(message))
                     }
                 }
             }

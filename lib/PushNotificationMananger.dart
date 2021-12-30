@@ -9,7 +9,7 @@ enum ChannelValue {
   deviceTokenListener,
   getDeviceToken,
   deleteDeviceToken,
-  notificationClickedListener,
+  clickedNotificationListener,
   notificationReceiverListener,
   requestPermission,
   showNotification,
@@ -21,7 +21,7 @@ extension MethodName on ChannelValue {
         'deviceTokenListener',
         'getDeviceToken',
         'deleteDeviceToken',
-        'notificationClickedListener',
+        'clickedNotificationListener',
         'notificationReceiverListener',
         'requestPermission',
         'showNotification',
@@ -59,7 +59,7 @@ class PushNotificationManager extends PushNotificationInterface {
         _notificationReceivedStreamController.add(
           Map<String, dynamic>.from(call.arguments),
         );
-      } else if (call.method == ChannelValue.notificationClickedListener.name) {
+      } else if (call.method == ChannelValue.clickedNotificationListener.name) {
         _clickedNotificationStreamController.add(
           Map<String, dynamic>.from(call.arguments),
         );
@@ -98,7 +98,7 @@ class PushNotificationManager extends PushNotificationInterface {
   Future<Map<String, dynamic>?> getClickedNotification() async {
     try {
       var response = await _channel.invokeMapMethod(
-        ChannelValue.notificationClickedListener.name,
+        ChannelValue.clickedNotificationListener.name,
       );
       if (response == null) return null;
       return Map<String, dynamic>.from(
