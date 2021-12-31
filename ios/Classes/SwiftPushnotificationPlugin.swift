@@ -8,9 +8,9 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
     private var methodChannel: FlutterMethodChannel?
     private var rawOptions: [String: Bool] = [:]
     
-    let notificationCenter = UNUserNotificationCenter.current()
+    private let notificationCenter = UNUserNotificationCenter.current()
     private var currentDeviceToken: String?
-    var pendingNotification: [String: Any]?
+    private var pendingNotification: [String: Any]?
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "pushnotification", binaryMessenger: registrar.messenger())
