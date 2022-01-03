@@ -13,7 +13,7 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
     var pendingNotification: [String: Any]?
     
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "pushnotification", binaryMessenger: registrar.messenger())
+        let channel = FlutterMethodChannel(name: "com.vignesh.pushnotification/messaging", binaryMessenger: registrar.messenger())
         let instance = SwiftPushnotificationPlugin(channel: channel)
         registrar.addMethodCallDelegate(instance, channel: channel)
     }

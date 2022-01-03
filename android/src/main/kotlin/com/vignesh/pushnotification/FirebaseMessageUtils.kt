@@ -10,7 +10,7 @@ import kotlin.collections.HashMap
 enum class ChannelValue(val type: String) {
     DEVICE_TOKEN_LISTENER("deviceTokenListener"),
     GET_DEVICE_TOKEN("getDeviceToken"),
-    DELETE_DEVICE_TOKEN("deleteDeviceToken"),
+    UN_REGISTER("unregister"),
     CLICKED_NOTIFICATION_LISTENER("clickedNotificationListener"),
     ON_NOTIFICATION_RECEIVER_LISTENER("notificationReceiverListener"),
     REQUEST_PERMISSION("requestPermission"),
