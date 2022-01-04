@@ -7,6 +7,7 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
     
     private var methodChannel: FlutterMethodChannel?
     private var rawOptions: [String: Bool] = [:]
+    private var currentOptions: UNAuthorizationOptions = []
     
     private let notificationCenter = UNUserNotificationCenter.current()
     private var currentDeviceToken: String?
@@ -26,11 +27,13 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        let event = MTIncomingChannel(rawValue: call.method)
+        guard let event = MTIncomingChannel(rawValue: call.method) else {
+            return result(nil)
+        }
         switch event {
         case .requestPermission:
             let options = call.arguments as? [String: Bool] ?? [:]
-            requestPermission(options: options)
+            requestPermission(options: options, result: result)
             result(true)
         case .register:
             registerPushNotification()
@@ -54,14 +57,15 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
             removeNotification()
             result(true)
             break
-        case .none:
+        case .pendingNotification:
+            result(pendingNotification)
             break
         }
     }
     
     // MARK: - Notification methods
     
-    public func requestPermission(options: [String: Bool]) {
+    public func requestPermission(options: [String: Bool], result: @escaping FlutterResult) {
         var currentOptions: UNAuthorizationOptions = []
         rawOptions = options
         
@@ -75,14 +79,17 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
             currentOptions.insert(.badge)
         }
         
+        self.currentOptions = currentOptions
+        
         notificationCenter.requestAuthorization(options: currentOptions) { granted, error in
             if let error = error {
                 NSLog("Error while requesting pushnotification permission: %@", error.localizedDescription)
             }
             if granted {
                 self.registerPushNotification()
+                result(true)
             } else {
-                
+                result(false)
             }
         }
     }
@@ -99,14 +106,12 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
     public func registerPushNotification() {
         DispatchQueue.main.async {
             UIApplication.shared.registerForRemoteNotifications()
-            self.invokeMethod(.registered, arguments: self.rawOptions)
         }
     }
     
     public func unregisterNotification() {
         DispatchQueue.main.async {
             UIApplication.shared.unregisterForRemoteNotifications()
-            self.invokeMethod(.unregistered, arguments: self.rawOptions)
         }
     }
     
@@ -138,6 +143,13 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
         }
     }
     
+    public func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [AnyHashable : Any] = [:]) -> Bool {
+        if let remoteNotification = launchOptions[UIApplication.LaunchOptionsKey.remoteNotification] as? [String: Any] {
+            pendingNotification = remoteNotification
+        }
+        return true
+    }
+    
     public func invokeMethod(_ method: MTOutgoingChannel, arguments: Any?) {
         methodChannel?.invokeMethod(method.rawValue, arguments: arguments)
     }
@@ -146,6 +158,14 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
 
 @available(iOS 10.0, *)
 extension SwiftPushnotificationPlugin: UNUserNotificationCenterDelegate {
+    
+    public func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if #available(iOS 14.0, *) {
+            completionHandler([.sound, .badge, .banner, .list])
+        } else {
+            completionHandler([.sound, .badge, .alert])
+        }
+    }
     
     public func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) -> Bool {
         invokeMethod(.notificationClickedListener, arguments: userInfo)

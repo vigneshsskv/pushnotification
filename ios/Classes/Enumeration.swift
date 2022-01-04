@@ -14,11 +14,10 @@ public enum MTIncomingChannel: String {
     case getDeviceToken = "getDeviceToken"
     case showNotification = "showNotification"
     case removeNotification = "removeNotification"
+    case pendingNotification = "notificationClickedListener"
 }
 
 public enum MTOutgoingChannel: String {
-    case registered = "registered"
-    case unregistered = "unregistered"
     case updateDeviceToken = "deviceTokenListener"
     case notificationClickedListener = "notificationClickedListener"
 }
