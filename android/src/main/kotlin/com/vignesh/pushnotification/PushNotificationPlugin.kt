@@ -68,7 +68,8 @@ class PushNotificationPlugin : BroadcastReceiver(),
                             // Store this message for later use by getInitialMessage.
                             initialMessage = remoteMessage
                             FirebaseMessageUtils.notifications.remove(messageId)
-                            val remoteMessageToMap = FirebaseMessageUtils.remoteMessageToMap(remoteMessage)
+                            val remoteMessageToMap =
+                                    FirebaseMessageUtils.remoteMessageToMap(remoteMessage)
                             channel.invokeMethod(
                                     ChannelValue.CLICKED_NOTIFICATION_LISTENER.type,
                                     remoteMessageToMap
@@ -184,12 +185,8 @@ class PushNotificationPlugin : BroadcastReceiver(),
     private fun getPermissions() = Tasks.call(
             cachedThreadPool,
             {
-                val permissions: MutableMap<String, Int> = HashMap()
                 ContextHolder.applicationContext?.let {
-                    val areNotificationsEnabled =
-                            NotificationManagerCompat.from(it).areNotificationsEnabled()
-                    permissions["authorizationStatus"] = if (areNotificationsEnabled) 1 else 0
-                    permissions
+                    NotificationManagerCompat.from(it).areNotificationsEnabled()
                 } ?: false
             },
     )
