@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:pushnotification/pushnotification.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  Pushnotification.getNotificationPermission();
   runApp(const MyApp());
 }
 

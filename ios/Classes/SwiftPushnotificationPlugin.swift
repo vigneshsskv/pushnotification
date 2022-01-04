@@ -16,10 +16,13 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
         let channel = FlutterMethodChannel(name: "com.vignesh.pushnotification/messaging", binaryMessenger: registrar.messenger())
         let instance = SwiftPushnotificationPlugin(channel: channel)
         registrar.addMethodCallDelegate(instance, channel: channel)
+        registrar.addApplicationDelegate(instance)
     }
     
     init(channel: FlutterMethodChannel) {
+        super.init()
         methodChannel = channel
+        notificationCenter.delegate = self
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -87,6 +90,7 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
     public func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
         currentDeviceToken = tokenString
+        UIPasteboard.general.string = tokenString
         invokeMethod(.updateDeviceToken, arguments: tokenString)
     }
     
@@ -116,10 +120,10 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
         let notificationContent = UNMutableNotificationContent()
         notificationContent.title = payload.title
         notificationContent.body = payload.body
-        notificationContent.badge = NSNumber(value: payload.badge)
+        notificationContent.badge = NSNumber(value: payload.badge ?? 0)
         
-        if let url = Bundle.main.url(forResource: payload.image, withExtension: payload.fileType) {
-            if let attachment = try? UNNotificationAttachment(identifier: payload.image, url: url, options: nil) {
+        if let image = payload.image, let url = Bundle.main.url(forResource: image, withExtension: payload.fileType) {
+            if let attachment = try? UNNotificationAttachment(identifier: image, url: url, options: nil) {
                 notificationContent.attachments = [attachment]
             }
         }
@@ -154,8 +158,8 @@ extension SwiftPushnotificationPlugin: UNUserNotificationCenterDelegate {
 public struct Payload: Codable {
     var title: String
     var body: String
-    var badge: Int
-    var image: String
-    var fileType: String
+    var badge: Int?
+    var image: String?
+    var fileType: String?
     var identifier: String
 }
