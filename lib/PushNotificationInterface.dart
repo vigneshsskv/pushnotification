@@ -1,3 +1,5 @@
+import 'package:pushnotification/PushNotificationMananger.dart';
+
 abstract class PushNotificationInterface {
   /// Fires when a new token is generated.
   Stream<String> get deviceTokenChangeListener {
@@ -10,6 +12,15 @@ abstract class PushNotificationInterface {
   Future<String> getDeviceToken() {
     throw UnimplementedError(
       'getDeviceToken() is not implemented',
+    );
+  }
+
+  /// To request the permission for push notification in app
+  ///
+  /// Request push notification permision
+  Future<void> registerDevice() {
+    throw UnimplementedError(
+      'unRegisterDevice() is not implemented',
     );
   }
 
@@ -44,7 +55,9 @@ abstract class PushNotificationInterface {
   }
 
   /// Check whether permission is avaliable in device to receive push notification.
-  Future<void> getNotificationPermission() {
+  Future<bool> getNotificationPermission(
+    IOSPermission? iosPermission,
+  ) {
     throw UnimplementedError(
       'getNotificationPermission() is not implemented',
     );

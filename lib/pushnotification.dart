@@ -29,8 +29,12 @@ class Pushnotification {
       _mediator.notificationReceivedListener;
 
   /// Check whether permission is avaliable in device to receive push notification.
-  static Future<void> getNotificationPermission() =>
-      _mediator.getNotificationPermission();
+  static Future<bool> getNotificationPermission({
+    IOSPermission? iosPermission,
+  }) =>
+      _mediator.getNotificationPermission(
+        iosPermission,
+      );
 
   /// Check whether permission is avaliable in device to receive push notification.
   static Future<void> removeNotification({

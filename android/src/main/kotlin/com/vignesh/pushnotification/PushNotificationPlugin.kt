@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.util.Log
 import androidx.annotation.NonNull
 import androidx.core.app.NotificationManagerCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -131,7 +130,7 @@ class PushNotificationPlugin : BroadcastReceiver(),
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             ChannelValue.GET_DEVICE_TOKEN.type -> getToken()
-            ChannelValue.DELETE_DEVICE_TOKEN.type -> deleteToken()
+            ChannelValue.UN_REGISTER.type -> unregister()
             ChannelValue.REQUEST_PERMISSION.type -> getPermissions()
             ChannelValue.SHOW_NOTIFICATION.type -> showNotification(call.arguments)
             ChannelValue.REMOVE_NOTIFICATION.type -> removeNotification(call.arguments)
@@ -171,7 +170,7 @@ class PushNotificationPlugin : BroadcastReceiver(),
             },
     )
 
-    private fun deleteToken() = Tasks.call(
+    private fun unregister() = Tasks.call(
             cachedThreadPool,
             {
                 consumedInitialMessages.clear()
