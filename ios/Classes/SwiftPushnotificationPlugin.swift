@@ -10,7 +10,6 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
     private var currentOptions: UNAuthorizationOptions = []
     
     private let notificationCenter = UNUserNotificationCenter.current()
-    private var currentDeviceToken: String?
     private var pendingNotification: [String: Any]?
     
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -44,7 +43,8 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
             result(true)
             break
         case .getDeviceToken:
-            result(currentDeviceToken)
+            let devicetoken = MTUserDefaults.shared.deviceToken
+            result(devicetoken)
             break
         case .showNotification:
             let args = call.arguments as? [String: Any] ?? [:]
@@ -58,7 +58,12 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
             result(true)
             break
         case .pendingNotification:
-            result(pendingNotification)
+            if let pendingNotification = pendingNotification {
+                let payload = generatePayload(with: pendingNotification)
+                result(payload)
+            } else {
+                result(nil)
+            }
             break
         }
     }
@@ -96,8 +101,7 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
     
     public func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        currentDeviceToken = tokenString
-        UIPasteboard.general.string = tokenString
+        MTUserDefaults.shared.deviceToken = tokenString
         invokeMethod(.updateDeviceToken, arguments: tokenString)
     }
     
@@ -112,6 +116,7 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
     public func unregisterNotification() {
         DispatchQueue.main.async {
             UIApplication.shared.unregisterForRemoteNotifications()
+            MTUserDefaults.shared.deviceToken = nil
         }
     }
     
@@ -150,8 +155,21 @@ public class SwiftPushnotificationPlugin: NSObject, FlutterPlugin {
         return true
     }
     
+    public func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        let payload = generatePayload(with: userInfo)
+        completionHandler(.noData)
+    }
+    
     public func invokeMethod(_ method: MTOutgoingChannel, arguments: Any?) {
         methodChannel?.invokeMethod(method.rawValue, arguments: arguments)
+    }
+    
+    public func generatePayload(with userInfo: [AnyHashable: Any]) -> [AnyHashable: Any] {
+        guard let aps = userInfo["aps"] as? [AnyHashable: Any] else { return userInfo }
+        var payload = [AnyHashable: Any]()
+        payload["notification"] = ["title": aps["title"], "apple": aps]
+        payload["data"] = userInfo["acme2"]
+        return payload
     }
     
 }
@@ -168,7 +186,8 @@ extension SwiftPushnotificationPlugin: UNUserNotificationCenterDelegate {
     }
     
     public func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) -> Bool {
-        invokeMethod(.notificationClickedListener, arguments: userInfo)
+        let payload = generatePayload(with: userInfo)
+        invokeMethod(.notificationClickedListener, arguments: payload)
         completionHandler(.noData)
         return true
     }
@@ -182,4 +201,20 @@ public struct Payload: Codable {
     var image: String?
     var fileType: String?
     var identifier: String
+}
+
+class MTUserDefaults: NSObject {
+    
+    static let shared: MTUserDefaults = MTUserDefaults()
+    
+    let deviceTokenKey = "DeviceToken"
+    
+    var deviceToken: String? {
+        get {
+            return UserDefaults.standard.string(forKey: deviceTokenKey)
+        } set {
+            UserDefaults.standard.set(newValue, forKey: deviceTokenKey)
+        }
+    }
+    
 }
